@@ -1,3 +1,50 @@
+# Tip: BackendService, TargetProxy, ForwardingRule must recreate on protocol change (resource key, name contains the protocol)
+# Tip: Address or GlobalAddress must not be recreated !!!
+
+########################
+# 1. HealthCheck + BackendService(Global/Regional ???)
+########################
+# resource "google_compute_health_check" "this" {...} (Only ALB)
+# resource "google_compute_backend_service" "this" {instanceGroup + healthCheck} (global)
+# resource "google_compute_region_backend_service" "this" {instanceGroup + healthCheck} (regional)
+
+########################
+# 2. Application Load Balancer (HTTP/HTTPS/GRPC)
+########################
+# resource "google_compute_url_map" "this" {backendService[]}
+# resource "google_compute_target_https_proxy" "this" {urlMap}
+# resource "google_compute_target_http_proxy" "this" {urlMap}
+# resource "google_compute_target_grpc_proxy" "this" {urlMap}
+
+########################
+# 2. Network Load Balancer (TCP/SSL)
+########################
+# resource "google_compute_target_ssl_proxy" "this" {backendService}
+# resource "google_compute_target_tcp_proxy" "this" {backendService}
+
+########################
+# 2. Legacy Load Balancer (Instance)
+########################
+# resource "google_compute_target_instance" "this" {instance}
+# resource "google_compute_target_pool" "this" {instance[] + healthCheck}
+
+########################
+# 3. Regional Forwarding Rule
+########################
+# resource "google_compute_address" "this" {}
+# resource "google_compute_forwarding_rule" "this" {target + portRange}
+
+########################
+# 3. Global Forwarding Rule
+########################
+# resource "google_compute_global_address" "this" {}
+# resource "google_compute_global_forwarding_rule" "this" {target + portRange}
+
+########################
+# ?. SSL/TLS Certificate, Network Endpoint Group, Backend Bucket
+########################
+
+
 data "google_compute_image" "this" {
   project = "ubuntu-os-cloud"
   family  = "ubuntu-2504-amd64"
@@ -92,57 +139,6 @@ data "google_compute_image" "this" {
 #     group = google_compute_instance_group.swarm_group.self_link
 #   }
 # }
-
-# ########################
-# # 0. Disk + Address
-# ########################
-# # resource "google_compute_disk" "this" {...}
-# # resource "google_compute_address" "this" {...}
-
-# ########################
-# # 1. Instance + Group + HealthCheck + BackendService(Global/Regional ???)
-# ########################
-# # resource "google_compute_instance" "this" {...}
-# # resource "google_compute_health_check" "this" {...} (Only ALB)
-# # resource "google_compute_instance_group" "this" {...}
-# # resource "google_compute_backend_service" "this" {instanceGroup + healthCheck} (global)
-# # resource "google_compute_region_backend_service" "this" {instanceGroup + healthCheck} (regional) 
-
-# ########################
-# # 2. Application Load Balancer (HTTP/HTTPS/GRPC)
-# ########################
-# # resource "google_compute_url_map" "this" {backendService[]}
-# # resource "google_compute_target_https_proxy" "this" {urlMap}
-# # resource "google_compute_target_http_proxy" "this" {urlMap}
-# # resource "google_compute_target_grpc_proxy" "this" {urlMap}
-
-# ########################
-# # 2. Network Load Balancer (TCP/SSL)
-# ########################
-# # resource "google_compute_target_ssl_proxy" "this" {backendService}
-# # resource "google_compute_target_tcp_proxy" "this" {backendService}
-
-# ########################
-# # 2. Legacy Load Balancer (Instance)
-# ########################
-# # resource "google_compute_target_instance" "this" {instance}
-# # resource "google_compute_target_pool" "this" {instance[] + healthCheck}
-
-# ########################
-# # 3. Regional Forwarding Rule
-# ########################
-# # resource "google_compute_address" "this" {}
-# # resource "google_compute_forwarding_rule" "this" {target + portRange}
-
-# ########################
-# # 3. Global Forwarding Rule
-# ########################
-# # resource "google_compute_global_address" "this" {}
-# # resource "google_compute_global_forwarding_rule" "this" {target + portRange}
-
-# ########################
-# # ?. SSL/TLS Certificate, Network Endpoint Group, Backend Bucket
-# ########################
 
 # # 1. Target HTTP Proxy
 # # resource "google_compute_url_map" "this" {

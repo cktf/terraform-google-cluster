@@ -26,50 +26,78 @@ variable "private_key" {
   description = "Cluster Private Key"
 }
 
+variable "groups" {
+  type = map(object({
+    name        = optional(string)
+    zone        = optional(string)
+    network     = optional(string)
+    description = optional(string)
+  }))
+  default     = {}
+  sensitive   = false
+  description = "Cluster Groups"
+}
+
+variable "volumes" {
+  type = map(object({
+    name                      = optional(string)
+    type                      = optional(string)
+    size                      = optional(number)
+    zone                      = optional(string)
+    labels                    = optional(map(string), {})
+    licenses                  = optional(list(string), [])
+    description               = optional(string)
+    access_mode               = optional(string)
+    storage_pool              = optional(string)
+    architecture              = optional(string)
+    provisioned_iops          = optional(number)
+    provisioned_throughput    = optional(number)
+    physical_block_size_bytes = optional(number)
+    protection                = optional(bool)
+  }))
+  default     = {}
+  sensitive   = false
+  description = "Cluster Volumes"
+}
+
 variable "servers" {
   type = map(object({
-    name       = optional(string)
-    type       = optional(string)
-    image      = optional(number)
-    attach     = optional(bool, false)
-    subnet     = optional(string)
-    network    = optional(number)
-    gateway    = optional(string, "")
-    location   = optional(string)
-    datacenter = optional(string)
-    protection = optional(bool)
-    firewalls  = optional(list(number), [])
-    ssh_keys   = optional(list(string), [])
-    labels     = optional(map(string), {})
-    groups     = optional(list(string), ["default"])
+    name        = optional(string)
+    zone        = optional(string)
+    type        = optional(string)
+    size        = optional(number)
+    image       = optional(number)
+    description = optional(string)
+    protection  = optional(bool)
+    labels      = optional(map(string), {})
+    tags        = optional(list(string), [])
+    volumes     = optional(list(string), [])
+    groups      = optional(list(string), [])
 
-    volumes = optional(map(object({
-      size      = number
-      format    = optional(string)
-      protected = optional(bool)
-    })), {})
+    public_ipv4 = optional(any, true)
+    public_ipv6 = optional(any, true)
+    private_ip  = optional(list(any))
   }))
   default     = {}
   sensitive   = false
   description = "Cluster Servers"
 }
 
-variable "load_balancers" {
+variable "balancers" {
   type = map(object({
-    name      = optional(string)
-    type      = optional(string)
-    zone      = optional(string)
-    attach    = optional(bool, false)
-    subnet    = optional(string)
-    network   = optional(number)
-    location  = optional(string)
-    algorithm = optional(string)
-    labels    = optional(map(string), {})
-    groups    = optional(list(string), ["default"])
+    name       = optional(string)
+    type       = optional(string)
+    zone       = optional(string)
+    labels     = optional(map(string), {})
+    location   = optional(string)
+    algorithm  = optional(string)
+    protection = optional(bool)
+    mappings   = optional(list(string), [])
+    groups     = optional(list(string), [])
 
-    mapping = map(number)
+    private_ip = optional(list(any))
   }))
   default     = {}
   sensitive   = false
-  description = "Cluster Load Balancers"
+  description = "Cluster Balancers"
 }

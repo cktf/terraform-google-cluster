@@ -1,0 +1,79 @@
+resource "google_compute_address" "ipv4" {
+  for_each = { for key, val in var.servers : key => val if val.public_ipv4 == "STATIC" }
+
+  name         = "${coalesce(each.value.name, "${var.name}-${each.key}")}-ipv4"
+  region       = each.value.region
+  ip_version   = "IPV4"
+  address_type = "EXTERNAL"
+}
+
+resource "google_compute_address" "ipv6" {
+  for_each = { for key, val in var.servers : key => val if val.public_ipv6 == "STATIC" }
+
+  name         = "${coalesce(each.value.name, "${var.name}-${each.key}")}-ipv6"
+  region       = each.value.region
+  ip_version   = "IPV6"
+  address_type = "EXTERNAL"
+}
+
+resource "google_compute_instance" "this" {
+  for_each = var.servers
+
+  name                = coalesce(each.value.name, "${var.name}-${each.key}")
+  zone                = each.value.zone
+  machine_type        = each.value.type
+  description         = each.value.description
+  deletion_protection = each.value.protection
+  labels              = each.value.labels
+  tags                = each.value.tags
+
+  boot_disk {
+    initialize_params {
+      size  = each.value.size
+      image = each.value.image
+    }
+  }
+
+  dynamic "attached_disk" {
+    for_each = { for volume in each.value.volumes : volume => split(":", volume) }
+    content {
+      source = try(google_compute_disk.this[attached_disk.value[0]].id, attached_disk.value[0])
+      mode   = try(attached_disk.value[1], "READ_WRITE")
+    }
+  }
+
+  network_interface {
+    network    = try(each.value.private_ip[0], null)
+    subnetwork = try(each.value.private_ip[1], null)
+
+    dynamic "access_config" {
+      for_each = each.value.public_ipv4 != false ? { "1" = "1" } : {}
+      content {
+        network_tier = "PREMIUM"
+        nat_ip       = try(google_compute_address.ipv4[each.key].address, null)
+      }
+    }
+
+    dynamic "ipv6_access_config" {
+      for_each = each.value.public_ipv6 != false ? { "1" = "1" } : {}
+      content {
+        network_tier  = "PREMIUM"
+        external_ipv6 = try(google_compute_address.ipv6[each.key].address, null)
+      }
+    }
+  }
+}
+
+resource "google_compute_instance_group" "this" {
+  for_each = var.groups
+
+  name        = coalesce(each.value.name, "${var.name}-${each.key}")
+  zone        = each.value.zone
+  network     = each.value.network
+  description = each.value.description
+
+  instances = [
+    for key, val in var.servers : google_compute_instance.this[key].self_link
+    if contains(val.groups, each.key)
+  ]
+}
