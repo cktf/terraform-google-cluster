@@ -17,7 +17,7 @@ output "servers" {
         type                = "ssh"
         host                = try(val.network_interface[0].access_config[0].nat_ip, val.network_interface[0].network_ip)
         port                = "22"
-        user                = "root"
+        user                = "terraform"
         private_key         = var.private_key
         private_host        = try(val.network_interface[0].network_ip, null)
         bastion_host        = try(var.bastion.host, null)

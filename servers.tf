@@ -25,7 +25,7 @@ resource "google_compute_instance" "this" {
   description         = each.value.description
   deletion_protection = each.value.protection
   can_ip_forward      = (each.value.public_ipv4 != false || each.value.public_ipv6 != false) && each.value.private_ip != null
-  metadata            = { ssh-keys = "root:${var.public_key}" }
+  metadata            = { ssh-keys = "terraform:${var.public_key}" }
   labels              = each.value.labels
   tags                = each.value.tags
 
@@ -70,7 +70,7 @@ resource "google_compute_instance" "this" {
     type                = "ssh"
     host                = try(self.network_interface[0].access_config[0].nat_ip, self.network_interface[0].network_ip)
     port                = "22"
-    user                = "root"
+    user                = "terraform"
     private_key         = var.private_key
     bastion_host        = try(var.bastion.host, null)
     bastion_port        = try(var.bastion.port, null)
