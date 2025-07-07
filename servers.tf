@@ -47,7 +47,7 @@ resource "google_compute_instance" "this" {
   network_interface {
     network    = try(each.value.private_ip[0], null)
     subnetwork = try(each.value.private_ip[1], null)
-    stack_type = "IPV4_IPV6"
+    stack_type = each.value.public_ipv6 != false ? "IPV4_IPV6" : "IPV4_ONLY"
 
     dynamic "access_config" {
       for_each = each.value.public_ipv4 != false ? { "1" = "1" } : {}
@@ -64,6 +64,22 @@ resource "google_compute_instance" "this" {
         # external_ipv6 = try(google_compute_address.ipv6[each.key].address, null)
       }
     }
+  }
+
+  connection {
+    type                = "ssh"
+    host                = try(self.network_interface[0].access_config[0].nat_ip, self.network_interface[0].network_ip)
+    port                = "22"
+    user                = "root"
+    private_key         = var.private_key
+    bastion_host        = try(var.bastion.host, null)
+    bastion_port        = try(var.bastion.port, null)
+    bastion_user        = try(var.bastion.user, null)
+    bastion_private_key = try(var.bastion.private_key, null)
+  }
+
+  provisioner "remote-exec" {
+    inline = ["cloud-init status --wait || true"]
   }
 }
 
