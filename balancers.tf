@@ -44,11 +44,10 @@
 # ?. SSL/TLS Certificate, Network Endpoint Group, Backend Bucket
 ########################
 
-
-data "google_compute_image" "this" {
-  project = "ubuntu-os-cloud"
-  family  = "ubuntu-2504-amd64"
-}
+# data "google_compute_image" "this" {
+#   project = "ubuntu-os-cloud"
+#   family  = "ubuntu-2504-amd64"
+# }
 
 # resource "google_compute_disk" "this" {
 #   name = "${var.name}-disk"

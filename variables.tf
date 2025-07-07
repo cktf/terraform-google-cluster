@@ -30,7 +30,6 @@ variable "groups" {
   type = map(object({
     name        = optional(string)
     zone        = optional(string)
-    network     = optional(string)
     description = optional(string)
   }))
   default     = {}
@@ -66,7 +65,7 @@ variable "servers" {
     zone        = optional(string)
     type        = optional(string)
     size        = optional(number)
-    image       = optional(number)
+    image       = optional(string)
     description = optional(string)
     protection  = optional(bool)
     labels      = optional(map(string), {})

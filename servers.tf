@@ -1,20 +1,20 @@
 resource "google_compute_address" "ipv4" {
-  for_each = { for key, val in var.servers : key => val if val.public_ipv4 == "STATIC" }
+  for_each = { for key, val in var.servers : key => val if val.public_ipv4 == true }
 
   name         = "${coalesce(each.value.name, "${var.name}-${each.key}")}-ipv4"
-  region       = each.value.region
+  region       = join("-", slice(split("-", each.value.zone), 0, 2))
   ip_version   = "IPV4"
   address_type = "EXTERNAL"
 }
 
-resource "google_compute_address" "ipv6" {
-  for_each = { for key, val in var.servers : key => val if val.public_ipv6 == "STATIC" }
+# resource "google_compute_address" "ipv6" {
+#   for_each = { for key, val in var.servers : key => val if val.public_ipv6 == true }
 
-  name         = "${coalesce(each.value.name, "${var.name}-${each.key}")}-ipv6"
-  region       = each.value.region
-  ip_version   = "IPV6"
-  address_type = "EXTERNAL"
-}
+#   name         = "${coalesce(each.value.name, "${var.name}-${each.key}")}-ipv6"
+#   region       = join("-", slice(split("-", each.value.zone), 0, 2))
+#   ip_version   = "IPV6"
+#   address_type = "EXTERNAL"
+# }
 
 resource "google_compute_instance" "this" {
   for_each = var.servers
@@ -24,6 +24,8 @@ resource "google_compute_instance" "this" {
   machine_type        = each.value.type
   description         = each.value.description
   deletion_protection = each.value.protection
+  can_ip_forward      = (each.value.public_ipv4 != false || each.value.public_ipv6 != false) && each.value.private_ip != null
+  metadata            = { ssh-keys = "root:${var.public_key}" }
   labels              = each.value.labels
   tags                = each.value.tags
 
@@ -45,6 +47,7 @@ resource "google_compute_instance" "this" {
   network_interface {
     network    = try(each.value.private_ip[0], null)
     subnetwork = try(each.value.private_ip[1], null)
+    stack_type = "IPV4_IPV6"
 
     dynamic "access_config" {
       for_each = each.value.public_ipv4 != false ? { "1" = "1" } : {}
@@ -57,8 +60,8 @@ resource "google_compute_instance" "this" {
     dynamic "ipv6_access_config" {
       for_each = each.value.public_ipv6 != false ? { "1" = "1" } : {}
       content {
-        network_tier  = "PREMIUM"
-        external_ipv6 = try(google_compute_address.ipv6[each.key].address, null)
+        network_tier = "PREMIUM"
+        # external_ipv6 = try(google_compute_address.ipv6[each.key].address, null)
       }
     }
   }
@@ -69,7 +72,6 @@ resource "google_compute_instance_group" "this" {
 
   name        = coalesce(each.value.name, "${var.name}-${each.key}")
   zone        = each.value.zone
-  network     = each.value.network
   description = each.value.description
 
   instances = [
