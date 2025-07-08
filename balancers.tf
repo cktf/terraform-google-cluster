@@ -133,7 +133,7 @@ resource "google_compute_backend_service" "this" {
             scheme          = val.scheme
             protocol        = upper(split(":", mapping)[0])
             health_checks   = [google_compute_health_check.this["${key}_${mapping}"].self_link]
-            backends        = { for group in val.group : group => google_compute_instance_group.this[backend.key].self_link }
+            backends        = { for group in val.group : group => google_compute_instance_group.this[group].self_link }
             iap_policy      = config.iap_policy
             cdn_policy      = config.cdn_policy
             security_policy = config.security_policy
@@ -213,7 +213,7 @@ resource "google_compute_region_backend_service" "this" {
   for_each = {
     for item in flatten([
       for key, val in var.balancers : [
-        for mapping, _ in val.mappings : {
+        for mapping, config in val.mappings : {
           key = "${key}_${mapping}"
           value = {
             name            = "${coalesce(val.name, "${var.name}-${key}")}-backend-service-${mapping}"
@@ -221,7 +221,7 @@ resource "google_compute_region_backend_service" "this" {
             scheme          = val.scheme
             protocol        = upper(split(":", mapping)[0])
             health_checks   = [google_compute_region_health_check.this["${key}_${mapping}"].self_link]
-            backends        = { for group in val.group : group => google_compute_instance_group.this[backend.key].self_link }
+            backends        = { for group in val.group : group => google_compute_instance_group.this[group].self_link }
             iap_policy      = config.iap_policy
             cdn_policy      = config.cdn_policy
             security_policy = config.security_policy
@@ -416,22 +416,22 @@ resource "google_compute_target_tcp_proxy" "this" {
 
 resource "google_compute_global_address" "this" {
   for_each = {
-    for key, val in var.var.balancers : key => val
+    for key, val in var.balancers : key => val
     if val.scope == "GLOBAL"
   }
 
-  name         = coalesce(val.name, "${var.name}-${key}")
+  name         = coalesce(each.value.name, "${var.name}-${each.key}")
   address_type = each.value.scheme
   ip_version   = "IPV4"
 }
 
 resource "google_compute_address" "this" {
   for_each = {
-    for key, val in var.var.balancers : key => val
+    for key, val in var.balancers : key => val
     if val.scope == "REGIONAL"
   }
 
-  name         = coalesce(val.name, "${var.name}-${key}")
+  name         = coalesce(each.value.name, "${var.name}-${each.key}")
   region       = each.value.region
   address_type = each.value.scheme
   ip_version   = "IPV4"
