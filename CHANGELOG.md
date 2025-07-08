@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/cktf/terraform-google-cluster/compare/1.1.0...1.2.0) (2025-07-08)
+
+
+### Features
+
+* add named ports ([298b40f](https://github.com/cktf/terraform-google-cluster/commit/298b40fd7a8d0990f31cf9fc43caa0dbb4365eb3))
+
 # [1.1.0](https://github.com/cktf/terraform-google-cluster/compare/1.0.0...1.1.0) (2025-07-08)
 
 
