@@ -24,66 +24,75 @@ module "cluster" {
   public_key  = "<REDACTED>"
   private_key = "<REDACTED>"
 
-  servers = {
-    manager-1 = {
-      type    = "cx22"
-      groups  = ["manager"]
-      attach  = true
-      network = 12345
+  groups = {
+    manager = {
+      zone = "us-central1-a"
     }
-    manager-2 = {
-      type    = "cx22"
-      groups  = ["manager"]
-      attach  = true
-      network = 12345
-    }
-    manager-3 = {
-      type    = "cx22"
-      groups  = ["manager"]
-      attach  = true
-      network = 12345
-    }
-
-    worker-1 = {
-      type    = "cx52"
-      groups  = ["worker"]
-      attach  = true
-      network = 12345
-    }
-    worker-2 = {
-      type    = "cx52"
-      groups  = ["worker"]
-      attach  = true
-      network = 12345
-    }
-    worker-3 = {
-      type    = "cx52"
-      groups  = ["worker"]
-      attach  = true
-      network = 12345
-    }
-    worker-4 = {
-      type    = "cx52"
-      groups  = ["worker"]
-      attach  = true
-      network = 12345
-    }
-    worker-5 = {
-      type    = "cx52"
-      groups  = ["worker"]
-      attach  = true
-      network = 12345
+    worker = {
+      zone = "us-central1-a"
     }
   }
 
-  load_balancers = {
+  servers = {
+    manager-1 = {
+      type   = "e2-small"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["manager"]
+    }
+    manager-2 = {
+      type   = "e2-small"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["manager"]
+    }
+    manager-3 = {
+      type   = "e2-small"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["manager"]
+    }
+
+    worker-1 = {
+      type   = "e2-medium"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["worker"]
+    }
+    worker-2 = {
+      type   = "e2-medium"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["worker"]
+    }
+    worker-3 = {
+      type   = "e2-medium"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["worker"]
+    }
+    worker-4 = {
+      type   = "e2-medium"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["worker"]
+    }
+    worker-5 = {
+      type   = "e2-medium"
+      zone   = "us-central1-a"
+      image  = "debian-cloud/debian-11"
+      groups = ["worker"]
+    }
+  }
+
+  balancers = {
     default = {
-      groups  = ["manager", "worker"]
-      attach  = true
-      network = 12345
-      mapping = {
-        80  = 80
-        443 = 443
+      type   = "INTERNAL"
+      scope  = "GLOBAL"
+      groups = ["manager", "worker"]
+      mappings = {
+        "tcp:80:80"   = {}
+        "tcp:443:443" = {}
       }
     }
   }
