@@ -80,4 +80,22 @@ resource "google_compute_instance_group" "this" {
     for key, val in var.servers : google_compute_instance.this[key].self_link
     if contains(val.groups, each.key)
   ]
+
+  dynamic "named_port" {
+    for_each = {
+      for item in flatten([
+        for key, val in var.balancers : [
+          for mapping, _ in val.mappings : {
+            key   = "${key}_${split(":", mapping)[2]}"
+            value = split(":", mapping)[2]
+          }
+        ] if contains(val.groups, each.key)
+      ]) : item.key => item.value
+    }
+
+    content {
+      name = "port-${named_port.value}"
+      port = named_port.value
+    }
+  }
 }

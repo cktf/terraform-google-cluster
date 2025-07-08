@@ -140,6 +140,7 @@ resource "google_compute_backend_service" "this" {
   name                  = each.value.name
   load_balancing_scheme = each.value.scheme
   protocol              = upper(each.value.protocol)
+  port_name             = "port-${each.value.target_port}"
   health_checks         = [google_compute_health_check.this[each.key].self_link]
   security_policy       = each.value.security_policy
 
@@ -213,6 +214,7 @@ resource "google_compute_region_backend_service" "this" {
   region                = each.value.region
   load_balancing_scheme = each.value.scheme
   protocol              = upper(each.value.protocol)
+  port_name             = "port-${each.value.target_port}"
   health_checks         = [google_compute_health_check.this[each.key].self_link]
 
   dynamic "backend" {
@@ -334,7 +336,7 @@ resource "google_compute_global_address" "this" {
   }
 
   name         = coalesce(each.value.name, "${var.name}-${each.key}")
-  address_type = each.value.scheme
+  address_type = split("_", each.value.scheme)[0]
   ip_version   = "IPV4"
 }
 
@@ -346,7 +348,7 @@ resource "google_compute_address" "this" {
 
   name         = coalesce(each.value.name, "${var.name}-${each.key}")
   region       = each.value.region
-  address_type = each.value.scheme
+  address_type = split("_", each.value.scheme)[0]
   ip_version   = "IPV4"
 }
 
