@@ -90,8 +90,9 @@ variable "balancers" {
     scheme = optional(string)
     groups = optional(list(string), [])
     mappings = optional(map(object({
-      cdn_policies     = optional(list(string), [])
-      waf_policies     = optional(list(string), [])
+      iap_policy       = optional(any)
+      cdn_policy       = optional(any)
+      security_policy  = optional(string)
       ssl_certificates = optional(list(string), [])
     })), {})
 
