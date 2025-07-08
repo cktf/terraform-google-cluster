@@ -30,3 +30,13 @@ output "servers" {
   sensitive   = false
   description = "Cluster Servers"
 }
+
+output "balancers" {
+  value = {
+    for key, val in var.balancers : key => {
+      address = try(google_compute_global_address.this[key].address, google_compute_address.this[key].address)
+    }
+  }
+  sensitive   = false
+  description = "Cluster Balancers"
+}
