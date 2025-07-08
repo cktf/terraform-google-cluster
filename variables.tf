@@ -73,8 +73,8 @@ variable "servers" {
     volumes     = optional(list(string), [])
     groups      = optional(list(string), [])
 
-    public_ipv4 = optional(any, true)
-    public_ipv6 = optional(any, true)
+    public_ipv4 = optional(bool, null)
+    public_ipv6 = optional(bool, null)
     private_ip  = optional(list(any))
   }))
   default     = {}
