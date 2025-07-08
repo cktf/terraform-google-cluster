@@ -84,15 +84,16 @@ variable "servers" {
 
 variable "balancers" {
   type = map(object({
-    name       = optional(string)
-    type       = optional(string)
-    zone       = optional(string)
-    labels     = optional(map(string), {})
-    location   = optional(string)
-    algorithm  = optional(string)
-    protection = optional(bool)
-    mappings   = optional(list(string), [])
-    groups     = optional(list(string), [])
+    name   = optional(string)
+    scope  = optional(string)
+    region = optional(string)
+    scheme = optional(string)
+    groups = optional(list(string), [])
+    mappings = optional(map(object({
+      cdn_policies     = optional(list(string), [])
+      waf_policies     = optional(list(string), [])
+      ssl_certificates = optional(list(string), [])
+    })), {})
 
     private_ip = optional(list(any))
   }))

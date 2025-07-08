@@ -1,240 +1,403 @@
-# Tip: BackendService, TargetProxy, ForwardingRule must recreate on protocol change (resource key, name contains the protocol)
-# Tip: Address or GlobalAddress must not be recreated !!!
-
 ########################
-# 1. HealthCheck + BackendService(Global/Regional ???)
+# 3. ForwardingRule + Address
 ########################
-# resource "google_compute_health_check" "this" {...} (Only ALB)
-# resource "google_compute_backend_service" "this" {instanceGroup + healthCheck} (global)
-# resource "google_compute_region_backend_service" "this" {instanceGroup + healthCheck} (regional)
+# resource "google_compute_address" "this" {} (regional)
+# resource "google_compute_forwarding_rule" "this" {target + portRange} (regional) (per-mapping)
+# resource "google_compute_global_address" "this" {} (global)
+# resource "google_compute_global_forwarding_rule" "this" {target + portRange} (global) (per-mapping)
 
-########################
-# 2. Application Load Balancer (HTTP/HTTPS/GRPC)
-########################
-# resource "google_compute_url_map" "this" {backendService[]}
-# resource "google_compute_target_https_proxy" "this" {urlMap}
-# resource "google_compute_target_http_proxy" "this" {urlMap}
-# resource "google_compute_target_grpc_proxy" "this" {urlMap}
+resource "google_compute_health_check" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name     = "${coalesce(val.name, "${var.name}-${key}")}-health-check-${mapping}"
+            protocol = split(":", mapping)[0]
+            port     = tonumber(split(":", mapping)[2])
+          }
+        }
+      ] if val.scope == "GLOBAL"
+    ]) : item.key => item.value
+  }
 
-########################
-# 2. Network Load Balancer (TCP/SSL)
-########################
-# resource "google_compute_target_ssl_proxy" "this" {backendService}
-# resource "google_compute_target_tcp_proxy" "this" {backendService}
+  name = each.value.name
 
-########################
-# 2. Legacy Load Balancer (Instance)
-########################
-# resource "google_compute_target_instance" "this" {instance}
-# resource "google_compute_target_pool" "this" {instance[] + healthCheck}
+  dynamic "grpc_health_check" {
+    for_each = each.value.protocol == "grpc" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-########################
-# 3. Regional Forwarding Rule
-########################
-# resource "google_compute_address" "this" {}
-# resource "google_compute_forwarding_rule" "this" {target + portRange}
+  dynamic "http2_health_check" {
+    for_each = each.value.protocol == "http2" ? { "1" = "1" } : {}
+    content {
+      port = each.value
+    }
+  }
 
-########################
-# 3. Global Forwarding Rule
-########################
-# resource "google_compute_global_address" "this" {}
-# resource "google_compute_global_forwarding_rule" "this" {target + portRange}
+  dynamic "https_health_check" {
+    for_each = each.value.protocol == "https" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-########################
-# ?. SSL/TLS Certificate, Network Endpoint Group, Backend Bucket
-########################
+  dynamic "http_health_check" {
+    for_each = each.value.protocol == "http" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-# data "google_compute_image" "this" {
-#   project = "ubuntu-os-cloud"
-#   family  = "ubuntu-2504-amd64"
-# }
+  dynamic "ssl_health_check" {
+    for_each = each.value.protocol == "ssl" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-# resource "google_compute_disk" "this" {
-#   name = "${var.name}-disk"
-#   type = "hyperdisk-balanced"
-#   zone = "us-central1-c"
-#   size = 10
-# }
+  dynamic "tcp_health_check" {
+    for_each = each.value.protocol == "tcp" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
+}
 
-# resource "google_compute_instance" "bastion" {
-#   name         = "${var.name}-bastion"
-#   zone         = "us-central1-c"
-#   machine_type = "e2-small"
+resource "google_compute_region_health_check" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name     = "${coalesce(val.name, "${var.name}-${key}")}-health-check-${mapping}"
+            region   = val.region
+            protocol = split(":", mapping)[0]
+            port     = tonumber(split(":", mapping)[2])
+          }
+        }
+      ] if val.scope == "REGIONAL"
+    ]) : item.key => item.value
+  }
 
-#   tags = ["swarm"]
+  name   = each.value.name
+  region = each.value.region
 
-#   boot_disk {
-#     initialize_params {
-#       image = data.google_compute_image.this.self_link
-#     }
-#   }
+  dynamic "grpc_health_check" {
+    for_each = each.value.protocol == "grpc" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-#   network_interface {
-#     network    = google_compute_network.this.name
-#     subnetwork = google_compute_subnetwork.this.name
+  dynamic "http2_health_check" {
+    for_each = each.value.protocol == "http2" ? { "1" = "1" } : {}
+    content {
+      port = each.value
+    }
+  }
 
-#     # access_config {
-#     #   // Ephemeral public IP
-#     # }
-#   }
+  dynamic "https_health_check" {
+    for_each = each.value.protocol == "https" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-#   metadata = {
-#     startup-script = <<-EOT
-#       #!/bin/bash
-#       sudo apt update -y && sudo apt install -y nginx
-#       EOT
-#   }
+  dynamic "http_health_check" {
+    for_each = each.value.protocol == "http" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+  dynamic "ssl_health_check" {
+    for_each = each.value.protocol == "ssl" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
 
-# # Health check for the backend instances
-# resource "google_compute_health_check" "tcp_health_check" {
-#   name               = "${var.name}-tcp-health-check"
-#   timeout_sec        = 1
-#   check_interval_sec = 1
+  dynamic "tcp_health_check" {
+    for_each = each.value.protocol == "tcp" ? { "1" = "1" } : {}
+    content {
+      port = each.value.port
+    }
+  }
+}
 
-#   tcp_health_check {
-#     port = "80" # Change this to the port your application is listening on
-#   }
+resource "google_compute_backend_service" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name     = "${coalesce(val.name, "${var.name}-${key}")}-backend-service-${mapping}"
+            protocol = upper(split(":", mapping)[0])
+            groups   = { for group in val.group : group => "" }
+          }
+        }
+      ] if val.scope == "GLOBAL"
+    ]) : item.key => item.value
+  }
 
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+  name          = each.value.name
+  protocol      = each.value.protocol
+  health_checks = [google_compute_health_check.this[each.key].id]
 
-# # Instance group
-# resource "google_compute_instance_group" "swarm_group" {
-#   name    = "${var.name}-instance-group"
-#   zone    = "us-central1-c"
-#   network = google_compute_network.this.self_link
+  dynamic "backend" {
+    for_each = each.value.groups
+    content {
+      group = google_compute_instance_group.this[backend.key].self_link
+    }
+  }
 
-#   instances = [
-#     google_compute_instance.bastion.self_link
-#   ]
+  # TODO: CDN policies
+  # TODO: WAF policies
+  # TODO: IAP policies
+}
 
-#   named_port {
-#     name = "http"
-#     port = 80 # Change this to match your application port
-#   }
+resource "google_compute_region_backend_service" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name     = "${coalesce(val.name, "${var.name}-${key}")}-backend-service-${mapping}"
+            region   = val.region
+            protocol = upper(split(":", mapping)[0])
+            groups   = { for group in val.group : group => "" }
+          }
+        }
+      ] if val.scope == "REGIONAL"
+    ]) : item.key => item.value
+  }
 
-#   lifecycle {
-#     create_before_destroy = true
-#   }
-# }
+  name          = each.value.name
+  region        = each.value.region
+  protocol      = each.value.protocol
+  health_checks = [google_compute_health_check.this[each.key].id]
 
-# # Backend service that uses instance group
-# # Tip: BackendService, TargetProxy, ForwardingRule must recreate on protocol change (resource key, name contains the protocol)
-# # Tip: Address or GlobalAddress must not be recreated !!!
-# resource "google_compute_backend_service" "tcp" {
-#   name          = "${var.name}-backend-service-tcp"
-#   protocol      = "TCP"
-#   timeout_sec   = 10
-#   health_checks = [google_compute_health_check.tcp_health_check.id]
+  dynamic "backend" {
+    for_each = each.value.groups
+    content {
+      group = google_compute_instance_group.this[backend.key].self_link
+    }
+  }
 
-#   backend {
-#     group = google_compute_instance_group.swarm_group.self_link
-#   }
-# }
+  # TODO: CDN policies
+  # TODO: WAF policies
+  # TODO: IAP policies
+}
 
-# # 1. Target HTTP Proxy
-# # resource "google_compute_url_map" "this" {
-# #   name            = "${var.name}-url-map"
-# #   default_service = google_compute_backend_service.http.self_link
+resource "google_compute_url_map" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-url-map-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["grpc", "http2", "https", "http"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-# #   lifecycle {
-# #     create_before_destroy = true
-# #   }
-# # }
-# # resource "google_compute_target_http_proxy" "this" {
-# #   name    = "${var.name}-http-proxy"
-# #   url_map = google_compute_url_map.this.self_link
+  name            = each.value.name
+  default_service = each.value.scope == "GLOBAL" ? google_compute_backend_service.this[each.key].self_link : google_compute_region_backend_service.this[each.key].self_link
+}
 
-# #   lifecycle {
-# #     create_before_destroy = true
-# #   }
-# # }
+resource "google_compute_target_grpc_proxy" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-target-proxy-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["grpc"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-# # 2. Target TCP Proxy
-# resource "google_compute_target_tcp_proxy" "this" {
-#   name            = "${var.name}-tcp-proxy"
-#   backend_service = google_compute_backend_service.tcp.self_link
-# }
+  name    = each.value.name
+  url_map = google_compute_url_map.this[each.key].self_link
+}
 
-# # Global forwarding rule for HTTP traffic
-# resource "google_compute_global_forwarding_rule" "tcp" {
-#   name                  = "${var.name}-tcp-forwarding-rule"
-#   target                = google_compute_target_tcp_proxy.this.id
-#   port_range            = "80"
-#   load_balancing_scheme = "EXTERNAL"
-#   ip_address            = google_compute_global_address.this.address
-# }
-# resource "google_compute_global_address" "this" {
-#   name = "${var.name}-static-ip"
-# }
+resource "google_compute_target_https_proxy" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-target-proxy-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["https"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-# # Firewall rule to allow health checks
-# resource "google_compute_firewall" "health_check" {
-#   name    = "${var.name}-allow-health-check"
-#   network = google_compute_network.this.id
+  name    = each.value.name
+  url_map = google_compute_url_map.this[each.key].self_link
+  # TODO: SSL certificates
+  # TODO: Support HTTP2
+}
 
-#   allow {
-#     protocol = "tcp"
-#     ports    = ["80"] # Change this to match your application port
-#   }
+resource "google_compute_target_http_proxy" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-target-proxy-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["http"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-#   source_ranges = ["130.211.0.0/22", "35.191.0.0/16"] # Google health check ranges
-#   target_tags   = ["swarm"]
-# }
+  name    = each.value.name
+  url_map = google_compute_url_map.this[each.key].self_link
+}
 
-# # Firewall rule to allow external traffic to the load balancer
-# resource "google_compute_firewall" "lb_traffic" {
-#   name    = "${var.name}-allow-lb-traffic"
-#   network = google_compute_network.this.id
+resource "google_compute_target_ssl_proxy" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-target-proxy-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["ssl"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-#   allow {
-#     protocol = "tcp"
-#     ports    = ["80"] # Change this to match your application port
-#   }
+  name            = each.value.name
+  backend_service = each.value.scope == "GLOBAL" ? google_compute_backend_service.this[each.key].self_link : google_compute_region_backend_service.this[each.key].self_link
+  # TODO: SSL certificates
+}
 
-#   source_ranges = ["${google_compute_global_address.this.address}/32"]
-#   target_tags   = ["swarm"]
-# }
+resource "google_compute_target_tcp_proxy" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name  = "${coalesce(val.name, "${var.name}-${key}")}-target-proxy-${mapping}"
+            scope = val.scope
+          }
+        } if contains(["tcp"], mapping)
+      ]
+    ]) : item.key => item.value
+  }
 
-# module "bastion" {
-#   source  = "cktf/cluster/hcloud"
-#   version = "2.0.0"
+  name            = each.value.name
+  backend_service = each.value.scope == "GLOBAL" ? google_compute_backend_service.this[each.key].self_link : google_compute_region_backend_service.this[each.key].self_link
+}
 
-#   name        = var.name
-#   public_key  = tls_private_key.this.public_key_openssh
-#   private_key = tls_private_key.this.private_key_openssh
+resource "google_compute_global_address" "this" {
+  for_each = {
+    for key, val in var.var.balancers : key => val
+    if val.type == "GLOBAL"
+  }
 
-#   servers = {
-#     bastion = {
-#       type       = "cx22"
-#       image      = data.hcloud_image.this.id
-#       attach     = true
-#       network    = module.network.id
-#       gateway    = local.cidr
-#       location   = values(var.groups)[0].location
-#       protection = true
-#     }
-#   }
-# }
+  name         = coalesce(val.name, "${var.name}-${key}")
+  address_type = each.value.scheme
+  ip_version   = "IPV4"
+}
 
-# module "bastion_config" {
-#   source = "../config"
+resource "google_compute_address" "this" {
+  for_each = {
+    for key, val in var.var.balancers : key => val
+    if val.type == "REGIONAL"
+  }
 
-#   name    = var.name
-#   servers = module.bastion.servers
-# }
+  name         = coalesce(val.name, "${var.name}-${key}")
+  region       = each.value.region
+  address_type = each.value.scheme
+  ip_version   = "IPV4"
+}
 
-# module "bastion_hosts" {
-#   source     = "../ansible"
-#   depends_on = [module.swarm]
+resource "google_compute_global_forwarding_rule" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name   = "${coalesce(val.name, "${var.name}-${key}")}-forwarding-rule-${mapping}"
+            scheme = val.scheme
+            target = {
+              grpc  = google_compute_target_grpc_proxy.this["${key}_${mapping}"].self_link
+              http2 = google_compute_target_https_proxy.this["${key}_${mapping}"].self_link
+              https = google_compute_target_https_proxy.this["${key}_${mapping}"].self_link
+              http  = google_compute_target_http_proxy.this["${key}_${mapping}"].self_link
+              ssl   = google_compute_target_ssl_proxy.this["${key}_${mapping}"].self_link
+              tcp   = google_compute_target_tcp_proxy.this["${key}_${mapping}"].self_link
+            }[split(":", mapping)[0]]
+            port_range = split(":", mapping)[1]
+            ip_address = google_compute_global_address.this[key].self_link
+          }
+        }
+      ] if val.scope == "GLOBAL"
+    ]) : item.key => item.value
+  }
 
-#   servers  = merge(module.bastion.servers, module.cluster.servers)
-#   playbook = "../swarm/ansible/hosts.yml"
-# }
+  name                  = each.value.name
+  load_balancing_scheme = each.value.scheme
+  target                = each.value.target
+  port_range            = each.value.port_range
+  ip_address            = each.value.ip_address
+}
+
+resource "google_compute_forwarding_rule" "this" {
+  for_each = {
+    for item in flatten([
+      for key, val in var.balancers : [
+        for mapping, _ in val.mappings : {
+          key = "${key}_${mapping}"
+          value = {
+            name   = "${coalesce(val.name, "${var.name}-${key}")}-forwarding-rule-${mapping}"
+            region = val.region
+            scheme = val.scheme
+            target = {
+              grpc  = google_compute_target_grpc_proxy.this["${key}_${mapping}"].self_link
+              http2 = google_compute_target_https_proxy.this["${key}_${mapping}"].self_link
+              https = google_compute_target_https_proxy.this["${key}_${mapping}"].self_link
+              http  = google_compute_target_http_proxy.this["${key}_${mapping}"].self_link
+              ssl   = google_compute_target_ssl_proxy.this["${key}_${mapping}"].self_link
+              tcp   = google_compute_target_tcp_proxy.this["${key}_${mapping}"].self_link
+            }[split(":", mapping)[0]]
+            port_range = split(":", mapping)[1]
+            ip_address = google_compute_address.this[key].self_link
+          }
+        }
+      ] if val.scope == "REGIONAL"
+    ]) : item.key => item.value
+  }
+
+  name                  = each.value.name
+  region                = each.value.region
+  load_balancing_scheme = each.value.scheme
+  target                = each.value.target
+  port_range            = each.value.port_range
+  ip_address            = each.value.ip_address
+}
