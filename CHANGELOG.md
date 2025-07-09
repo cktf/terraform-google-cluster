@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/cktf/terraform-google-cluster/compare/1.2.0...1.3.0) (2025-07-09)
+
+
+### Features
+
+* make public_key, private_key sensitive ([2f9d04c](https://github.com/cktf/terraform-google-cluster/commit/2f9d04cae81213bf991757ea9fe5ab3ef2827e02))
+
 # [1.2.0](https://github.com/cktf/terraform-google-cluster/compare/1.1.0...1.2.0) (2025-07-08)
 
 
