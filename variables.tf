@@ -15,14 +15,14 @@ variable "bastion" {
 variable "public_key" {
   type        = string
   default     = null
-  sensitive   = false
+  sensitive   = true
   description = "Cluster Public Key"
 }
 
 variable "private_key" {
   type        = string
   default     = null
-  sensitive   = false
+  sensitive   = true
   description = "Cluster Private Key"
 }
 
