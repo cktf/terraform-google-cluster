@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/cktf/terraform-google-cluster/compare/1.3.0...1.4.0) (2025-07-10)
+
+
+### Features
+
+* add optional instance group ([209fe69](https://github.com/cktf/terraform-google-cluster/commit/209fe6931ab1c5e46b1f493f9228101193cf9db4))
+
 # [1.3.0](https://github.com/cktf/terraform-google-cluster/compare/1.2.0...1.3.0) (2025-07-09)
 
 
