@@ -70,7 +70,7 @@ resource "google_compute_instance" "this" {
 }
 
 resource "google_compute_instance_group" "this" {
-  for_each = { for key, val in var.groups : key => val if val.zone != null }
+  for_each = var.groups
 
   name        = coalesce(each.value.name, "${var.name}-${each.key}")
   zone        = each.value.zone
