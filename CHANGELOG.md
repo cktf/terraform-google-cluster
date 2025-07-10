@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/cktf/terraform-google-cluster/compare/1.4.0...1.5.0) (2025-07-10)
+
+
+### Features
+
+* create instance group without condition ([64f1600](https://github.com/cktf/terraform-google-cluster/commit/64f160094b4a71233121fb4f4ed64eac6057327e))
+
 # [1.4.0](https://github.com/cktf/terraform-google-cluster/compare/1.3.0...1.4.0) (2025-07-10)
 
 
