@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/cktf/terraform-google-cluster/compare/1.5.0...1.5.1) (2025-07-15)
+
+
+### Bug Fixes
+
+* reorder variables ([c627085](https://github.com/cktf/terraform-google-cluster/commit/c62708514d9f07cb03df96cf08273101916b07e0))
+
 # [1.5.0](https://github.com/cktf/terraform-google-cluster/compare/1.4.0...1.5.0) (2025-07-10)
 
 
