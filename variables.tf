@@ -41,8 +41,8 @@ variable "volumes" {
   type = map(object({
     name                      = optional(string)
     type                      = optional(string)
-    size                      = optional(number)
     zone                      = optional(string)
+    size                      = optional(number)
     labels                    = optional(map(string), {})
     licenses                  = optional(list(string), [])
     description               = optional(string)
@@ -62,16 +62,16 @@ variable "volumes" {
 variable "servers" {
   type = map(object({
     name        = optional(string)
-    zone        = optional(string)
     type        = optional(string)
+    zone        = optional(string)
     size        = optional(number)
     image       = optional(string)
+    labels      = optional(map(string), {})
     description = optional(string)
     protection  = optional(bool)
-    labels      = optional(map(string), {})
-    tags        = optional(list(string), [])
     volumes     = optional(list(string), [])
     groups      = optional(list(string), [])
+    tags        = optional(list(string), [])
 
     public_ipv4 = optional(bool, null)
     public_ipv6 = optional(bool, null)
