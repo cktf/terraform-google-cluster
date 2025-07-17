@@ -36,46 +36,8 @@ resource "google_compute_health_check" "this" {
 
   name = each.value.name
 
-  dynamic "grpc_health_check" {
-    for_each = each.value.protocol == "grpc" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "http2_health_check" {
-    for_each = each.value.protocol == "http2" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "https_health_check" {
-    for_each = each.value.protocol == "https" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "http_health_check" {
-    for_each = each.value.protocol == "http" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "ssl_health_check" {
-    for_each = each.value.protocol == "ssl" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "tcp_health_check" {
-    for_each = each.value.protocol == "tcp" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
+  tcp_health_check {
+    port_name = "port-${each.value.target_port}"
   }
 }
 
@@ -88,46 +50,8 @@ resource "google_compute_region_health_check" "this" {
   name   = each.value.name
   region = each.value.region
 
-  dynamic "grpc_health_check" {
-    for_each = each.value.protocol == "grpc" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "http2_health_check" {
-    for_each = each.value.protocol == "http2" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "https_health_check" {
-    for_each = each.value.protocol == "https" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "http_health_check" {
-    for_each = each.value.protocol == "http" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "ssl_health_check" {
-    for_each = each.value.protocol == "ssl" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
-  }
-
-  dynamic "tcp_health_check" {
-    for_each = each.value.protocol == "tcp" ? { "1" = "1" } : {}
-    content {
-      port = each.value.target_port
-    }
+  tcp_health_check {
+    port_name = "port-${each.value.target_port}"
   }
 }
 
