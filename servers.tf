@@ -41,8 +41,9 @@ resource "google_compute_instance" "this" {
   dynamic "attached_disk" {
     for_each = { for volume in each.value.volumes : volume => split(":", volume) }
     content {
-      source = try(google_compute_disk.this[attached_disk.value[0]].self_link, attached_disk.value[0])
-      mode   = try(attached_disk.value[1], "READ_WRITE")
+      device_name = attached_disk.value[0]
+      source      = try(google_compute_disk.this[attached_disk.value[0]].self_link, attached_disk.value[0])
+      mode        = try(attached_disk.value[1], "READ_WRITE")
     }
   }
 
