@@ -67,6 +67,22 @@ resource "google_compute_instance" "this" {
       }
     }
   }
+
+  connection {
+    type                = "ssh"
+    host                = try(self.network_interface[0].access_config[0].nat_ip, self.network_interface[0].network_ip)
+    port                = "22"
+    user                = "terraform"
+    private_key         = var.private_key
+    bastion_host        = try(var.bastion.host, null)
+    bastion_port        = try(var.bastion.port, null)
+    bastion_user        = try(var.bastion.user, null)
+    bastion_private_key = try(var.bastion.private_key, null)
+  }
+
+  provisioner "remote-exec" {
+    inline = ["cloud-init status --wait || true"]
+  }
 }
 
 resource "google_compute_instance_group" "this" {
