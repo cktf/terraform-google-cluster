@@ -1,3 +1,16 @@
+# [1.6.0](https://github.com/cktf/terraform-google-cluster/compare/1.5.1...1.6.0) (2025-07-17)
+
+
+### Bug Fixes
+
+* move all health check protocols to TCP ([8ba448b](https://github.com/cktf/terraform-google-cluster/commit/8ba448b80b4e91b0ced699f5330aeb4fe0bbb6a8))
+
+
+### Features
+
+* add cloud-init wait for instances ([7cb3880](https://github.com/cktf/terraform-google-cluster/commit/7cb3880445e3a86f375e684e3c0a2e08c91a5cc6))
+* add device_name for attached_disks ([06ad635](https://github.com/cktf/terraform-google-cluster/commit/06ad635753e71ed562bbea3655a1b387b13990c0))
+
 ## [1.5.1](https://github.com/cktf/terraform-google-cluster/compare/1.5.0...1.5.1) (2025-07-15)
 
 
